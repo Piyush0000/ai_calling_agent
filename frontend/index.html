@@ -392,6 +392,7 @@
                         if (micButton.classList.contains('active') && !isListening && !isSpeaking) {
                             try {
                                 recognition.start();
+                                console.log('Recognition restarted successfully');
                             } catch (error) {
                                 console.log('Recognition restart error:', error);
                             }
@@ -579,11 +580,20 @@
                 micButton.classList.add('active');
                 micIcon.textContent = '⏹️';
                 micText.textContent = 'Stop Call';
+            } else if (isSpeaking) {
+                // Keep active while speaking
+                micButton.classList.remove('inactive');
+                micButton.classList.add('active');
+                micIcon.textContent = '⏹️';
+                micText.textContent = 'Stop Call';
             } else {
-                micButton.classList.remove('active');
-                micButton.classList.add('inactive');
-                micIcon.textContent = '🎤';
-                micText.textContent = 'Start Call';
+                // Only set to inactive if conversation is not active
+                if (!micButton.classList.contains('active')) {
+                    micButton.classList.remove('active');
+                    micButton.classList.add('inactive');
+                    micIcon.textContent = '🎤';
+                    micText.textContent = 'Start Call';
+                }
             }
         }
 
