@@ -381,7 +381,9 @@
             recognition.onend = () => {
                 isListening = false;
                 updateMicButton();
-                // Don't set to idle if conversation is ongoing - let the speak function handle it
+                console.log('Recognition ended, isSpeaking:', isSpeaking, 'isActive:', micButton.classList.contains('active'));
+                
+                // Only set to idle if conversation is not active
                 if (!isSpeaking && !micButton.classList.contains('active')) {
                     updateStatus('idle', 'Ready to start a conversation');
                 }
@@ -420,34 +422,20 @@
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = languageSelect.value;
             utterance.rate = 1;
-            utterance.pitch = 1.1; // Slightly higher pitch for female voice
+            utterance.pitch = 1.2; // Higher pitch for female voice
 
-            // Try to select a female voice
+            // Try to select a female voice - simplified approach
             const voices = window.speechSynthesis.getVoices();
-            let femaleVoice = null;
+            console.log('Available voices:', voices.length);
             
-            // Look for female voices based on voice name
+            // Try to find a female voice
             for (let voice of voices) {
-                if (voice.name.includes('Female') || voice.name.includes('female') || 
-                    voice.name.includes('Zira') || voice.name.includes('Samantha') ||
-                    voice.name.includes('Google Hindi') || voice.name.includes('India')) {
-                    femaleVoice = voice;
+                if (voice.name.includes('Female') || voice.name.includes('Zira') || 
+                    voice.name.includes('Samantha') || voice.name.includes('Google')) {
+                    utterance.voice = voice;
+                    console.log('Selected voice:', voice.name);
                     break;
                 }
-            }
-            
-            // If no specific female voice found, try to get any voice that matches the language
-            if (!femaleVoice) {
-                for (let voice of voices) {
-                    if (voice.lang.startsWith(languageSelect.value.split('-')[0])) {
-                        femaleVoice = voice;
-                        break;
-                    }
-                }
-            }
-            
-            if (femaleVoice) {
-                utterance.voice = femaleVoice;
             }
 
             utterance.onstart = () => {
@@ -457,19 +445,20 @@
 
             utterance.onend = () => {
                 isSpeaking = false;
-                updateStatus('listening', 'Listening...');
+                console.log('Speech ended, restarting listening...');
                 
                 // Auto-restart listening if conversation is ongoing
                 if (micButton.classList.contains('active')) {
+                    updateStatus('listening', 'Listening...');
                     setTimeout(() => {
                         if (micButton.classList.contains('active') && !isListening) {
                             try {
                                 recognition.start();
                             } catch (error) {
-                                console.log('Recognition already started or error:', error);
+                                console.log('Recognition restart error:', error);
                             }
                         }
-                    }, 300);
+                    }, 500);
                 } else {
                     updateStatus('idle', 'Ready to start a conversation');
                 }
@@ -487,6 +476,7 @@
         // Process message through backend
         async function processMessage(message) {
             updateStatus('processing', 'Processing...');
+            console.log('Processing message:', message);
             
             try {
                 const response = await fetch(`${BACKEND_URL}/api/chat`, {
@@ -505,6 +495,7 @@
                 }
 
                 const data = await response.json();
+                console.log('Backend response:', data);
                 
                 // Update conversation history
                 conversationHistory = data.conversationHistory;
