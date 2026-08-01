@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riya - Real Estate AI Calling Agent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .language-select {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .mic-button {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .mic-button.inactive {
+            background: #667eea;
+            color: white;
+        }
+
+        .mic-button.active {
+            background: #ef4444;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .transcript-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .transcript-item {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .transcript-item.user {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .transcript-item.assistant {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+        }
+
+        .transcript-label {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .transcript-text {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status.listening {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .status.processing {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .status.speaking {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .status.idle {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .leads-button {
+            width: 100%;
+            padding: 15px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .leads-button:hover {
+            background: #059669;
+        }
+
+        .leads-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .leads-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .lead-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #10b981;
+        }
+
+        .lead-item h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .lead-item p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .lead-item .timestamp {
+            color: #999;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .no-leads {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 Riya - Real Estate AI Agent</h1>
+            <p>Your AI-powered real estate sales assistant</p>
+        </div>
+
+        <div class="controls">
+            <select class="language-select" id="languageSelect">
+                <option value="en-US">English (US)</option>
+                <option value="hi-IN">Hindi (India)</option>
+                <option value="en-IN">English (India)</option>
+            </select>
+            <button class="mic-button inactive" id="micButton">
+                <span id="micIcon">🎤</span>
+                <span id="micText">Start Call</span>
+            </button>
+        </div>
+
+        <div class="status idle" id="status">
+            Ready to start a conversation
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="transcript-container" id="transcriptContainer">
+            <div class="transcript-item assistant">
+                <div class="transcript-label">Riya</div>
+                <div class="transcript-text">Hello! I'm Riya from Sunrise Meadows. How can I help you today?</div>
+            </div>
+        </div>
+
+        <button class="leads-button" id="leadsButton">View Captured Leads</button>
+    </div>
+
+    <div class="leads-modal" id="leadsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Captured Leads</h2>
+                <button class="close-button" id="closeModal">&times;</button>
+            </div>
+            <div id="leadsContent">
+                <div class="no-leads">No leads captured yet</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Backend URL configuration
+        // For local development: http://localhost:3001
+        // For production: Replace with your deployed Render backend URL
+        // You can also set this via environment variable: window.BACKEND_URL
+        const BACKEND_URL = window.BACKEND_URL || 'http://localhost:3001';
+
+        // State
+        let isListening = false;
+        let recognition = null;
+        let conversationHistory = [];
+        let isSpeaking = false;
+
+        // DOM Elements
+        const micButton = document.getElementById('micButton');
+        const micIcon = document.getElementById('micIcon');
+        const micText = document.getElementById('micText');
+        const status = document.getElementById('status');
+        const transcriptContainer = document.getElementById('transcriptContainer');
+        const languageSelect = document.getElementById('languageSelect');
+        const leadsButton = document.getElementById('leadsButton');
+        const leadsModal = document.getElementById('leadsModal');
+        const closeModal = document.getElementById('closeModal');
+        const leadsContent = document.getElementById('leadsContent');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Initialize Speech Recognition
+        function initSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                showError('Speech recognition is not supported in this browser. Please use Chrome.');
+                return false;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = languageSelect.value;
+
+            recognition.onstart = () => {
+                isListening = true;
+                updateMicButton();
+                updateStatus('listening', 'Listening...');
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                updateMicButton();
+                if (!isSpeaking) {
+                    updateStatus('idle', 'Ready to start a conversation');
+                }
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                addTranscript('user', transcript);
+                processMessage(transcript);
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                if (event.error === 'no-speech') {
+                    updateStatus('idle', 'No speech detected. Try again.');
+                } else {
+                    showError('Speech recognition error: ' + event.error);
+                }
+                isListening = false;
+                updateMicButton();
+            };
+
+            return true;
+        }
+
+        // Initialize Text-to-Speech
+        function speak(text) {
+            if (!('speechSynthesis' in window)) {
+                showError('Text-to-speech is not supported in this browser.');
+                return;
+            }
+
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = languageSelect.value;
+            utterance.rate = 1;
+            utterance.pitch = 1;
+
+            utterance.onstart = () => {
+                isSpeaking = true;
+                updateStatus('speaking', 'Riya is speaking...');
+            };
+
+            utterance.onend = () => {
+                isSpeaking = false;
+                updateStatus('idle', 'Ready to start a conversation');
+                
+                // Auto-restart listening if conversation is ongoing
+                if (micButton.classList.contains('active')) {
+                    setTimeout(() => {
+                        if (micButton.classList.contains('active') && !isListening) {
+                            recognition.start();
+                        }
+                    }, 500);
+                }
+            };
+
+            utterance.onerror = (event) => {
+                console.error('Speech synthesis error:', event.error);
+                isSpeaking = false;
+                updateStatus('idle', 'Ready to start a conversation');
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Process message through backend
+        async function processMessage(message) {
+            updateStatus('processing', 'Processing...');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        conversationHistory: conversationHistory
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Backend request failed');
+                }
+
+                const data = await response.json();
+                
+                // Update conversation history
+                conversationHistory = data.conversationHistory;
+                
+                // Add assistant response to transcript
+                addTranscript('assistant', data.response);
+                
+                // Speak the response
+                speak(data.response);
+                
+                // Check if lead was captured
+                if (data.leadData) {
+                    console.log('Lead captured:', data.leadData);
+                    showNotification('Lead captured successfully!');
+                }
+
+            } catch (error) {
+                console.error('Error processing message:', error);
+                showError('Failed to connect to the backend. Please ensure the server is running.');
+                updateStatus('idle', 'Connection error');
+            }
+        }
+
+        // Add transcript to UI
+        function addTranscript(speaker, text) {
+            const transcriptItem = document.createElement('div');
+            transcriptItem.className = `transcript-item ${speaker}`;
+            transcriptItem.innerHTML = `
+                <div class="transcript-label">${speaker === 'user' ? 'You' : 'Riya'}</div>
+                <div class="transcript-text">${text}</div>
+            `;
+            transcriptContainer.appendChild(transcriptItem);
+            transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+        }
+
+        // Update microphone button state
+        function updateMicButton() {
+            if (isListening) {
+                micButton.classList.remove('inactive');
+                micButton.classList.add('active');
+                micIcon.textContent = '⏹️';
+                micText.textContent = 'Stop Call';
+            } else {
+                micButton.classList.remove('active');
+                micButton.classList.add('inactive');
+                micIcon.textContent = '🎤';
+                micText.textContent = 'Start Call';
+            }
+        }
+
+        // Update status display
+        function updateStatus(state, message) {
+            status.className = `status ${state}`;
+            status.textContent = message;
+        }
+
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+            setTimeout(() => {
+                errorMessage.classList.remove('active');
+            }, 5000);
+        }
+
+        // Show notification
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #10b981;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1001;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Load leads from backend
+        async function loadLeads() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/leads`);
+                if (!response.ok) {
+                    throw new Error('Failed to load leads');
+                }
+                
+                const leads = await response.json();
+                displayLeads(leads);
+            } catch (error) {
+                console.error('Error loading leads:', error);
+                leadsContent.innerHTML = '<div class="no-leads">Failed to load leads. Please ensure the backend is running.</div>';
+            }
+        }
+
+        // Display leads in modal
+        function displayLeads(leads) {
+            if (leads.length === 0) {
+                leadsContent.innerHTML = '<div class="no-leads">No leads captured yet</div>';
+                return;
+            }
+
+            leadsContent.innerHTML = leads.map(lead => `
+                <div class="lead-item">
+                    <h3>${lead.name || 'Unknown'}</h3>
+                    <p><strong>Phone:</strong> ${lead.phone || 'Not provided'}</p>
+                    <p><strong>Budget:</strong> ${lead.budget || 'Not specified'}</p>
+                    <p><strong>Requirements:</strong> ${lead.requirements || 'Not specified'}</p>
+                    <p><strong>Interest Level:</strong> ${lead.interest_level || 'Unknown'}</p>
+                    <p><strong>Language:</strong> ${lead.language || 'Unknown'}</p>
+                    <div class="timestamp">${new Date(lead.timestamp).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        // Event Listeners
+        micButton.addEventListener('click', () => {
+            if (!recognition) {
+                if (!initSpeechRecognition()) {
+                    return;
+                }
+            }
+
+            if (isListening) {
+                recognition.stop();
+            } else {
+                conversationHistory = []; // Reset conversation on new call
+                transcriptContainer.innerHTML = ''; // Clear transcript
+                addTranscript('assistant', 'Hello! I\'m Riya from Sunrise Meadows. How can I help you today?');
+                recognition.lang = languageSelect.value;
+                recognition.start();
+            }
+        });
+
+        languageSelect.addEventListener('change', () => {
+            if (recognition) {
+                recognition.lang = languageSelect.value;
+            }
+        });
+
+        leadsButton.addEventListener('click', () => {
+            loadLeads();
+            leadsModal.classList.add('active');
+        });
+
+        closeModal.addEventListener('click', () => {
+            leadsModal.classList.remove('active');
+        });
+
+        leadsModal.addEventListener('click', (e) => {
+            if (e.target === leadsModal) {
+                leadsModal.classList.remove('active');
+            }
+        });
+
+        // Initialize speech recognition on load
+        initSpeechRecognition();
+    </script>
+</body>
+</html>

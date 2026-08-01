@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Data files
+backend/data/leads.json
+!backend/data/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+
+# Deployment
+.vercel/
+.netlify/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+temp/
+tmp/

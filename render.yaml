@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: riya-backend
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: PORT
+        value: 10000
+      - key: NODE_VERSION
+        value: 18.x
