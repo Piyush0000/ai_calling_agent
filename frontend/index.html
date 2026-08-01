@@ -371,11 +371,13 @@
             recognition.continuous = false;
             recognition.interimResults = false;
             recognition.lang = languageSelect.value;
+            recognition.maxAlternatives = 1;
 
             recognition.onstart = () => {
                 isListening = true;
                 updateMicButton();
                 updateStatus('listening', 'Listening...');
+                console.log('Speech recognition started');
             };
 
             recognition.onend = () => {
@@ -383,14 +385,26 @@
                 updateMicButton();
                 console.log('Recognition ended, isSpeaking:', isSpeaking, 'isActive:', micButton.classList.contains('active'));
                 
-                // Only set to idle if conversation is not active
-                if (!isSpeaking && !micButton.classList.contains('active')) {
+                // Auto-restart if conversation is active and not currently speaking
+                if (micButton.classList.contains('active') && !isSpeaking) {
+                    console.log('Auto-restarting recognition...');
+                    setTimeout(() => {
+                        if (micButton.classList.contains('active') && !isListening && !isSpeaking) {
+                            try {
+                                recognition.start();
+                            } catch (error) {
+                                console.log('Recognition restart error:', error);
+                            }
+                        }
+                    }, 1000);
+                } else if (!micButton.classList.contains('active')) {
                     updateStatus('idle', 'Ready to start a conversation');
                 }
             };
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
+                console.log('Speech detected:', transcript);
                 addTranscript('user', transcript);
                 processMessage(transcript);
             };
@@ -398,7 +412,12 @@
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
                 if (event.error === 'no-speech') {
-                    updateStatus('idle', 'No speech detected. Try again.');
+                    console.log('No speech detected, will auto-restart if active');
+                    // Don't show error for no-speech, let it auto-restart
+                } else if (event.error === 'not-allowed') {
+                    showError('Microphone access denied. Please allow microphone access.');
+                    micButton.classList.remove('active');
+                    micButton.classList.add('inactive');
                 } else {
                     showError('Speech recognition error: ' + event.error);
                 }
@@ -416,6 +435,8 @@
                 return;
             }
 
+            console.log('Speaking text:', text);
+            
             // Cancel any ongoing speech
             window.speechSynthesis.cancel();
 
@@ -424,23 +445,10 @@
             utterance.rate = 1;
             utterance.pitch = 1.2; // Higher pitch for female voice
 
-            // Try to select a female voice - simplified approach
-            const voices = window.speechSynthesis.getVoices();
-            console.log('Available voices:', voices.length);
-            
-            // Try to find a female voice
-            for (let voice of voices) {
-                if (voice.name.includes('Female') || voice.name.includes('Zira') || 
-                    voice.name.includes('Samantha') || voice.name.includes('Google')) {
-                    utterance.voice = voice;
-                    console.log('Selected voice:', voice.name);
-                    break;
-                }
-            }
-
             utterance.onstart = () => {
                 isSpeaking = true;
                 updateStatus('speaking', 'Riya is speaking...');
+                console.log('Speech synthesis started');
             };
 
             utterance.onend = () => {
