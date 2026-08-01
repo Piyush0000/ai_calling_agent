@@ -445,6 +445,25 @@
             utterance.rate = 1;
             utterance.pitch = 1.2; // Higher pitch for female voice
 
+            // Simple voice selection - get first available voice for the language
+            const voices = window.speechSynthesis.getVoices();
+            console.log('Available voices:', voices.length);
+            
+            if (voices.length > 0) {
+                // Try to find a voice that matches the language
+                const langPrefix = languageSelect.value.split('-')[0];
+                const matchingVoice = voices.find(voice => voice.lang.startsWith(langPrefix));
+                
+                if (matchingVoice) {
+                    utterance.voice = matchingVoice;
+                    console.log('Selected voice:', matchingVoice.name);
+                } else {
+                    // Fallback to first voice
+                    utterance.voice = voices[0];
+                    console.log('Using fallback voice:', voices[0].name);
+                }
+            }
+
             utterance.onstart = () => {
                 isSpeaking = true;
                 updateStatus('speaking', 'Riya is speaking...');
