@@ -369,9 +369,9 @@
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
             recognition.continuous = false;
-            recognition.interimResults = false;
+            recognition.interimResults = true; // Enable interim results for better recognition
             recognition.lang = languageSelect.value;
-            recognition.maxAlternatives = 1;
+            recognition.maxAlternatives = 3; // Get more alternatives for better accuracy
 
             recognition.onstart = () => {
                 isListening = true;
@@ -397,24 +397,31 @@
                                 console.log('Recognition restart error:', error);
                             }
                         }
-                    }, 1500); // Increased delay to give user time to respond
+                    }, 1500);
                 } else if (!micButton.classList.contains('active')) {
                     updateStatus('idle', 'Ready to start a conversation');
                 }
             };
 
             recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                console.log('Speech detected:', transcript);
-                addTranscript('user', transcript);
-                processMessage(transcript);
+                // Get the final result when available
+                if (event.results[0].isFinal) {
+                    const transcript = event.results[0][0].transcript;
+                    console.log('Final speech detected:', transcript);
+                    console.log('Confidence:', event.results[0][0].confidence);
+                    addTranscript('user', transcript);
+                    processMessage(transcript);
+                } else {
+                    // Show interim results for feedback
+                    const interimTranscript = event.results[0][0].transcript;
+                    console.log('Interim speech:', interimTranscript);
+                }
             };
 
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
                 if (event.error === 'no-speech') {
                     console.log('No speech detected, will auto-restart if active');
-                    // Don't show error for no-speech, let it auto-restart
                 } else if (event.error === 'not-allowed') {
                     showError('Microphone access denied. Please allow microphone access.');
                     micButton.classList.remove('active');
