@@ -381,7 +381,8 @@
             recognition.onend = () => {
                 isListening = false;
                 updateMicButton();
-                if (!isSpeaking) {
+                // Don't set to idle if conversation is ongoing - let the speak function handle it
+                if (!isSpeaking && !micButton.classList.contains('active')) {
                     updateStatus('idle', 'Ready to start a conversation');
                 }
             };
@@ -419,7 +420,35 @@
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = languageSelect.value;
             utterance.rate = 1;
-            utterance.pitch = 1;
+            utterance.pitch = 1.1; // Slightly higher pitch for female voice
+
+            // Try to select a female voice
+            const voices = window.speechSynthesis.getVoices();
+            let femaleVoice = null;
+            
+            // Look for female voices based on voice name
+            for (let voice of voices) {
+                if (voice.name.includes('Female') || voice.name.includes('female') || 
+                    voice.name.includes('Zira') || voice.name.includes('Samantha') ||
+                    voice.name.includes('Google Hindi') || voice.name.includes('India')) {
+                    femaleVoice = voice;
+                    break;
+                }
+            }
+            
+            // If no specific female voice found, try to get any voice that matches the language
+            if (!femaleVoice) {
+                for (let voice of voices) {
+                    if (voice.lang.startsWith(languageSelect.value.split('-')[0])) {
+                        femaleVoice = voice;
+                        break;
+                    }
+                }
+            }
+            
+            if (femaleVoice) {
+                utterance.voice = femaleVoice;
+            }
 
             utterance.onstart = () => {
                 isSpeaking = true;
@@ -428,15 +457,21 @@
 
             utterance.onend = () => {
                 isSpeaking = false;
-                updateStatus('idle', 'Ready to start a conversation');
+                updateStatus('listening', 'Listening...');
                 
                 // Auto-restart listening if conversation is ongoing
                 if (micButton.classList.contains('active')) {
                     setTimeout(() => {
                         if (micButton.classList.contains('active') && !isListening) {
-                            recognition.start();
+                            try {
+                                recognition.start();
+                            } catch (error) {
+                                console.log('Recognition already started or error:', error);
+                            }
                         }
-                    }, 500);
+                    }, 300);
+                } else {
+                    updateStatus('idle', 'Ready to start a conversation');
                 }
             };
 
@@ -636,6 +671,11 @@
 
         // Initialize speech recognition on load
         initSpeechRecognition();
+        
+        // Load voices when they become available
+        window.speechSynthesis.onvoiceschanged = () => {
+            console.log('Voices loaded:', window.speechSynthesis.getVoices().length);
+        };
     </script>
 </body>
 </html>
