@@ -368,7 +368,7 @@
 
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
-            recognition.continuous = false;
+            recognition.continuous = true; // Keep recognition running to avoid repeated permission requests
             recognition.interimResults = true; // Enable interim results for better recognition
             recognition.lang = languageSelect.value;
             recognition.maxAlternatives = 3; // Get more alternatives for better accuracy
@@ -445,6 +445,11 @@
 
             console.log('Speaking text:', text);
             
+            // Stop recognition while AI is speaking to prevent interference
+            if (isListening) {
+                recognition.stop();
+            }
+            
             // Cancel any ongoing speech
             window.speechSynthesis.cancel();
 
@@ -508,7 +513,7 @@
                                 console.log('Recognition restart error:', error);
                             }
                         }
-                    }, 1200); // Increased delay to give more time for user to be ready
+                    }, 1200);
                 } else {
                     updateStatus('idle', 'Ready to start a conversation');
                 }
