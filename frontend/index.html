@@ -78,6 +78,10 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            user-select: none; /* Prevent text selection */
+            -webkit-user-select: none; /* Safari */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* IE/Edge */
         }
 
         .mic-button.inactive {
@@ -86,7 +90,7 @@
         }
 
         .mic-button.active {
-            background: #ef4444;
+            background: #10b981; /* Green when active */
             color: white;
             animation: pulse 1.5s infinite;
         }
