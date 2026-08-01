@@ -443,24 +443,38 @@
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = languageSelect.value;
             utterance.rate = 1;
-            utterance.pitch = 1.2; // Higher pitch for female voice
+            utterance.pitch = 1.3; // Higher pitch for clearly female voice
 
-            // Simple voice selection - get first available voice for the language
+            // Force female voice selection
             const voices = window.speechSynthesis.getVoices();
             console.log('Available voices:', voices.length);
             
             if (voices.length > 0) {
-                // Try to find a voice that matches the language
-                const langPrefix = languageSelect.value.split('-')[0];
-                const matchingVoice = voices.find(voice => voice.lang.startsWith(langPrefix));
+                // Prioritize female voices
+                const femaleVoice = voices.find(voice => 
+                    voice.name.includes('Female') || 
+                    voice.name.includes('Zira') || 
+                    voice.name.includes('Samantha') ||
+                    voice.name.includes('Google Hindi') ||
+                    voice.name.includes('Microsoft Zira')
+                );
                 
-                if (matchingVoice) {
-                    utterance.voice = matchingVoice;
-                    console.log('Selected voice:', matchingVoice.name);
+                if (femaleVoice) {
+                    utterance.voice = femaleVoice;
+                    console.log('Selected female voice:', femaleVoice.name);
                 } else {
-                    // Fallback to first voice
-                    utterance.voice = voices[0];
-                    console.log('Using fallback voice:', voices[0].name);
+                    // Try to find voice matching language
+                    const langPrefix = languageSelect.value.split('-')[0];
+                    const matchingVoice = voices.find(voice => voice.lang.startsWith(langPrefix));
+                    
+                    if (matchingVoice) {
+                        utterance.voice = matchingVoice;
+                        console.log('Selected language voice:', matchingVoice.name);
+                    } else {
+                        // Fallback to first voice
+                        utterance.voice = voices[0];
+                        console.log('Using fallback voice:', voices[0].name);
+                    }
                 }
             }
 
@@ -485,7 +499,7 @@
                                 console.log('Recognition restart error:', error);
                             }
                         }
-                    }, 500);
+                    }, 800); // Slightly longer delay for better user experience
                 } else {
                     updateStatus('idle', 'Ready to start a conversation');
                 }
@@ -527,11 +541,11 @@
                 // Update conversation history
                 conversationHistory = data.conversationHistory;
                 
-                // Add assistant response to transcript
-                addTranscript('assistant', data.response);
-                
-                // Speak the response
-                speak(data.response);
+                // Speak the response only if it's not empty (and it will add to transcript)
+                if (data.response && data.response.trim() !== '') {
+                    addTranscript('assistant', data.response);
+                    speak(data.response);
+                }
                 
                 // Check if lead was captured
                 if (data.leadData) {
@@ -657,12 +671,30 @@
 
             if (isListening) {
                 recognition.stop();
+                micButton.classList.remove('active');
+                micButton.classList.add('inactive');
             } else {
+                // Set button to active state
+                micButton.classList.remove('inactive');
+                micButton.classList.add('active');
+                
                 conversationHistory = []; // Reset conversation on new call
                 transcriptContainer.innerHTML = ''; // Clear transcript
-                addTranscript('assistant', 'Hello! I\'m Riya from Sunrise Meadows. How can I help you today?');
-                recognition.lang = languageSelect.value;
-                recognition.start();
+                
+                // Speak the greeting (this will also add it to transcript via speak function)
+                const greeting = 'Hello! I\'m Riya from Sunrise Meadows. How can I help you today?';
+                addTranscript('assistant', greeting);
+                speak(greeting);
+                
+                // Start listening after greeting finishes
+                setTimeout(() => {
+                    recognition.lang = languageSelect.value;
+                    try {
+                        recognition.start();
+                    } catch (error) {
+                        console.log('Recognition start error:', error);
+                    }
+                }, 3000); // Wait for greeting to finish (approx 3 seconds)
             }
         });
 
