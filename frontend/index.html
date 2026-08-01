@@ -397,7 +397,7 @@
                                 console.log('Recognition restart error:', error);
                             }
                         }
-                    }, 800);
+                    }, 1500); // Increased delay to give user time to respond
                 } else if (!micButton.classList.contains('active')) {
                     updateStatus('idle', 'Ready to start a conversation');
                 }
@@ -501,7 +501,7 @@
                                 console.log('Recognition restart error:', error);
                             }
                         }
-                    }, 800);
+                    }, 1200); // Increased delay to give more time for user to be ready
                 } else {
                     updateStatus('idle', 'Ready to start a conversation');
                 }
