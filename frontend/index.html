@@ -675,10 +675,15 @@
                 <div class="lead-item">
                     <h3>${lead.name || 'Unknown'}</h3>
                     <p><strong>Phone:</strong> ${lead.phone || 'Not provided'}</p>
+                    <p><strong>Preferred Location:</strong> ${lead.preferred_location || 'Not specified'}</p>
+                    <p><strong>Property Type:</strong> ${lead.property_type || 'Not specified'}</p>
+                    <p><strong>Configuration:</strong> ${lead.configuration || 'Not specified'}</p>
                     <p><strong>Budget:</strong> ${lead.budget || 'Not specified'}</p>
-                    <p><strong>Requirements:</strong> ${lead.requirements || 'Not specified'}</p>
+                    <p><strong>Purpose:</strong> ${lead.purpose || 'Not specified'}</p>
+                    <p><strong>Timeline:</strong> ${lead.timeline || 'Not specified'}</p>
                     <p><strong>Interest Level:</strong> ${lead.interest_level || 'Unknown'}</p>
                     <p><strong>Language:</strong> ${lead.language || 'Unknown'}</p>
+                    ${lead.questions_asked && lead.questions_asked.length > 0 ? `<p><strong>Questions Asked:</strong> ${lead.questions_asked.join(', ')}</p>` : ''}
                     <div class="timestamp">${new Date(lead.timestamp).toLocaleString()}</div>
                 </div>
             `).join('');
