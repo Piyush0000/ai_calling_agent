@@ -385,11 +385,9 @@
                 updateMicButton();
                 console.log('Recognition ended, isSpeaking:', isSpeaking, 'isActive:', micButton.classList.contains('active'));
                 
-                // Only auto-restart if we got actual speech results and conversation is active
-                // Don't restart if no speech was detected (prevents permission loops)
-                if (micButton.classList.contains('active') && !isSpeaking && window.lastSpeechDetected) {
-                    console.log('Auto-restarting recognition after speech...');
-                    window.lastSpeechDetected = false; // Reset flag
+                // Auto-restart if conversation is active and not currently speaking
+                if (micButton.classList.contains('active') && !isSpeaking) {
+                    console.log('Auto-restarting recognition...');
                     setTimeout(() => {
                         if (micButton.classList.contains('active') && !isListening && !isSpeaking) {
                             try {
@@ -399,18 +397,15 @@
                                 console.log('Recognition restart error:', error);
                             }
                         }
-                    }, 1200);
+                    }, 800);
                 } else if (!micButton.classList.contains('active')) {
                     updateStatus('idle', 'Ready to start a conversation');
-                } else {
-                    console.log('Not restarting - no speech detected or conversation inactive');
                 }
             };
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 console.log('Speech detected:', transcript);
-                window.lastSpeechDetected = true; // Set flag that we got speech
                 addTranscript('user', transcript);
                 processMessage(transcript);
             };
