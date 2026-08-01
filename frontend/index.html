@@ -368,10 +368,10 @@
 
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
-            recognition.continuous = true; // Keep recognition running to avoid repeated permission requests
-            recognition.interimResults = true; // Enable interim results for better recognition
+            recognition.continuous = false; // Use non-continuous for better stability
+            recognition.interimResults = false; // Disable interim results for stability
             recognition.lang = languageSelect.value;
-            recognition.maxAlternatives = 3; // Get more alternatives for better accuracy
+            recognition.maxAlternatives = 1; // Reduce alternatives for stability
 
             recognition.onstart = () => {
                 isListening = true;
@@ -385,7 +385,7 @@
                 updateMicButton();
                 console.log('Recognition ended, isSpeaking:', isSpeaking, 'isActive:', micButton.classList.contains('active'));
                 
-                // Auto-restart if conversation is active and not currently speaking
+                // Only restart if conversation is active and not currently speaking
                 if (micButton.classList.contains('active') && !isSpeaking) {
                     console.log('Auto-restarting recognition...');
                     setTimeout(() => {
@@ -397,30 +397,26 @@
                                 console.log('Recognition restart error:', error);
                             }
                         }
-                    }, 1500);
+                    }, 1000);
                 } else if (!micButton.classList.contains('active')) {
                     updateStatus('idle', 'Ready to start a conversation');
                 }
             };
 
             recognition.onresult = (event) => {
-                // Get the final result when available
-                if (event.results[0].isFinal) {
-                    const transcript = event.results[0][0].transcript;
-                    console.log('Final speech detected:', transcript);
-                    console.log('Confidence:', event.results[0][0].confidence);
-                    addTranscript('user', transcript);
-                    processMessage(transcript);
-                } else {
-                    // Show interim results for feedback
-                    const interimTranscript = event.results[0][0].transcript;
-                    console.log('Interim speech:', interimTranscript);
-                }
+                const transcript = event.results[0][0].transcript;
+                console.log('Speech detected:', transcript);
+                console.log('Confidence:', event.results[0][0].confidence);
+                addTranscript('user', transcript);
+                processMessage(transcript);
             };
 
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
-                if (event.error === 'no-speech') {
+                if (event.error === 'aborted') {
+                    console.log('Recognition aborted, will restart if active');
+                    // Don't show error for aborted, it's normal when we stop it
+                } else if (event.error === 'no-speech') {
                     console.log('No speech detected, will auto-restart if active');
                 } else if (event.error === 'not-allowed') {
                     showError('Microphone access denied. Please allow microphone access.');
@@ -447,7 +443,11 @@
             
             // Stop recognition while AI is speaking to prevent interference
             if (isListening) {
-                recognition.stop();
+                try {
+                    recognition.stop();
+                } catch (error) {
+                    console.log('Error stopping recognition:', error);
+                }
             }
             
             // Cancel any ongoing speech
@@ -513,7 +513,7 @@
                                 console.log('Recognition restart error:', error);
                             }
                         }
-                    }, 1200);
+                    }, 1000);
                 } else {
                     updateStatus('idle', 'Ready to start a conversation');
                 }
