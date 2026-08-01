@@ -471,7 +471,8 @@
             utterance.onend = () => {
                 isSpeaking = false;
                 console.log('Speech ended');
-                updateStatus('idle', 'Click to respond');
+                updateStatus('idle', 'Tap to speak');
+                updateMicButton(); // Update button state after speech ends
             };
 
             utterance.onerror = (event) => {
@@ -680,6 +681,8 @@
 
         // Event Listeners
         micButton.addEventListener('click', () => {
+            console.log('Button clicked, isListening:', isListening, 'isSpeaking:', isSpeaking, 'isActive:', micButton.classList.contains('active'));
+            
             if (!recognition) {
                 if (!initSpeechRecognition()) {
                     return;
@@ -690,23 +693,27 @@
                 recognition.stop();
                 micButton.classList.remove('active');
                 micButton.classList.add('inactive');
+            } else if (micButton.classList.contains('active') && !isSpeaking) {
+                // Start listening for user input
+                startListening();
             } else {
-                // Set button to active state
+                // Start new conversation
                 micButton.classList.remove('inactive');
                 micButton.classList.add('active');
                 
                 conversationHistory = []; // Reset conversation on new call
                 transcriptContainer.innerHTML = ''; // Clear transcript
                 
-                // Speak the greeting (this will also add it to transcript via speak function)
+                // Speak the greeting
                 const greeting = 'Hello! I\'m Riya from Sunrise Meadows. How can I help you today?';
                 addTranscript('assistant', greeting);
                 speak(greeting);
             }
         });
 
-        // Add manual trigger button after AI responds
+        // Add manual trigger for transcript area
         transcriptContainer.addEventListener('click', () => {
+            console.log('Transcript clicked, isListening:', isListening, 'isSpeaking:', isSpeaking, 'isActive:', micButton.classList.contains('active'));
             if (micButton.classList.contains('active') && !isListening && !isSpeaking) {
                 startListening();
             }
