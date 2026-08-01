@@ -385,9 +385,9 @@
 
             recognition.onend = () => {
                 isListening = false;
-                updateMicButton();
                 console.log('Recognition ended');
-                updateStatus('idle', 'Click to speak');
+                // Don't update button here - let it stay active for conversation
+                updateStatus('idle', 'Tap to speak');
             };
 
             recognition.onresult = (event) => {
@@ -404,13 +404,13 @@
                     stopConversation();
                 } else if (event.error === 'no-speech') {
                     console.log('No speech detected');
-                    updateStatus('idle', 'Click to speak');
+                    updateStatus('idle', 'Tap to speak');
                 } else {
                     console.log('Recognition error:', event.error);
-                    updateStatus('idle', 'Click to speak');
+                    updateStatus('idle', 'Tap to speak');
                 }
                 isListening = false;
-                updateMicButton();
+                // Don't update button - keep conversation active
             };
 
             return true;
@@ -578,6 +578,9 @@
 
         // Update microphone button state
         function updateMicButton() {
+            // Always check the active class first to determine conversation state
+            const isConversationActive = micButton.classList.contains('active');
+            
             if (isListening) {
                 micButton.classList.remove('inactive');
                 micButton.classList.add('active');
@@ -589,8 +592,8 @@
                 micButton.classList.add('active');
                 micIcon.textContent = '⏹️';
                 micText.textContent = 'Stop Call';
-            } else if (micButton.classList.contains('active')) {
-                // Conversation is active but not listening/speaking
+            } else if (isConversationActive) {
+                // Conversation is active but not listening/speaking - KEEP IT ACTIVE
                 micButton.classList.remove('inactive');
                 micButton.classList.add('active');
                 micIcon.textContent = '🎤';
@@ -694,12 +697,17 @@
             }
 
             if (isListening) {
+                // Stop listening but keep conversation active
                 recognition.stop();
-                micButton.classList.remove('active');
-                micButton.classList.add('inactive');
-            } else if (micButton.classList.contains('active') && !isSpeaking) {
-                // Start listening for user input
-                startListening();
+            } else if (micButton.classList.contains('active')) {
+                // Conversation is active - start listening or stop conversation
+                if (isSpeaking) {
+                    // If speaking, stop everything
+                    stopConversation();
+                } else {
+                    // Start listening for user input
+                    startListening();
+                }
             } else {
                 // Start new conversation
                 micButton.classList.remove('inactive');
@@ -713,6 +721,9 @@
                 addTranscript('assistant', greeting);
                 speak(greeting);
             }
+            
+            // Always update button state after click
+            updateMicButton();
         });
 
         // Add manual trigger for transcript area
